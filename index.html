@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>JH Samir — visual storyteller &amp; lifelong learner</title>
+<meta name="description" content="Portfolio of JH Samir, a visual storyteller and lifelong learner based in Dhaka, Bangladesh. Selected work, about, and contact." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23111'/%3E%3Ctext x='50' y='69' font-size='56' text-anchor='middle' fill='white' font-family='Georgia,serif'%3Es%3C/text%3E%3C/svg%3E" />
+
+<!--
+  ============================================================
+  QUICK CUSTOMIZE CHECKLIST — read this first
+  ============================================================
+  1. Search for "EDIT:" comments through this file and swap in
+     your own name, bio, city, email and Instagram handle.
+  2. Photos / video: replace the files inside assets/img and
+     assets/work with your own, keeping the same filenames —
+     or edit the `gallery` array near the bottom of this file
+     to point at new filenames. To add a video item, use:
+       { type: "video", src: "assets/work/my-clip.mp4",
+         poster: "assets/work/my-clip-poster.jpg", title: "Reel" }
+  3. Music: drop an .mp3 file at assets/audio/music.mp3
+     (see assets/audio/README.txt). The "music on/off" control
+     already wired up below.
+  4. Colors / type live in the CSS variables at the top of the
+     <style> block if you want to adjust the palette or fonts.
+  ============================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,500;0,700;0,800;1,600&family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+  /* ============ TOKENS ============ */
+  :root{
+    --bg:#f7f7f4;
+    --fg:#141412;
+    --muted:#6c6c66;
+    --line:#dddad2;
+    --line-strong:#b7b3a8;
+    --panel:#111110;
+    --panel-fg:#e9e8e3;
+    --radius:18px;
+    --gap:clamp(1.25rem, 4vw, 3rem);
+    --maxw:1180px;
+  }
+  [data-theme="dark"]{
+    --bg:#0b0b0a;
+    --fg:#f2f1ec;
+    --muted:#8c897f;
+    --line:#2a2a26;
+    --line-strong:#403d35;
+    --panel:#050505;
+    --panel-fg:#eceae3;
+  }
+
+  *,*::before,*::after{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--fg);
+    font-family:'Space Grotesk', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    transition:background .4s ease, color .4s ease;
+  }
+  img,video{ max-width:100%; display:block; }
+  a{ color:inherit; }
+  ::selection{ background:var(--fg); color:var(--bg); }
+
+  h1,h2,.wordmark{
+    font-family:'Archivo', sans-serif;
+    font-weight:800;
+    line-height:0.92;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .italic{ font-style:italic; font-weight:600; }
+
+  .pixel{
+    font-family:'Silkscreen', monospace;
+    line-height:1.3;
+  }
+  .mono{
+    font-family:'Space Mono', monospace;
+  }
+
+  :focus-visible{ outline:2px solid var(--fg); outline-offset:3px; }
+
+  .wrap{
+    max-width:var(--maxw);
+    margin:0 auto;
+    padding-inline:clamp(1.25rem, 5vw, 3.5rem);
+  }
+
+  section{ position:relative; padding-block:clamp(4rem, 10vh, 7rem); }
+
+  /* ============ FIXED CHROME ============ */
+  .brand-mark{
+    position:fixed; top:22px; left:clamp(1rem,4vw,2rem); z-index:50;
+    font-family:'Archivo',sans-serif; font-weight:800; font-size:0.95rem;
+    text-decoration:none; letter-spacing:-0.02em;
+    padding:6px 10px; border-radius:8px;
+  }
+  .controls-fixed{
+    position:fixed; right:clamp(1rem,4vw,2rem); bottom:20px; z-index:50;
+    display:flex; flex-direction:column; align-items:flex-end; gap:6px;
+  }
+  .ctrl-link{
+    font-family:'Space Grotesk',sans-serif; font-size:0.85rem;
+    background:none; border:none; color:var(--fg); cursor:pointer;
+    padding:4px 2px; text-decoration:underline; text-underline-offset:3px;
+    text-decoration-color:var(--line-strong);
+  }
+  .ctrl-link:hover{ text-decoration-color:var(--fg); }
+  .ctrl-link.is-on{ color:var(--fg); font-weight:600; }
+
+  /* ============ DECORATIVE: CONSTELLATIONS ============ */
+  .constellation{
+    position:absolute; overflow:visible; pointer-events:none;
+    stroke:var(--line-strong); fill:none; stroke-width:1;
+    opacity:0.8;
+  }
+  .constellation circle{ fill:var(--bg); stroke:var(--line-strong); }
+  .constellation .node-plus{ stroke:var(--line-strong); }
+  .constellation.draw path, .constellation.draw line{
+    stroke-dasharray:200; stroke-dashoffset:200;
+    animation:draw-line 1.4s ease forwards;
+  }
+  .constellation.draw circle{
+    transform-origin:center;
+    transform-box:fill-box;
+    animation:pop-in .5s ease forwards;
+    opacity:0;
+  }
+  @keyframes draw-line{ to{ stroke-dashoffset:0; } }
+  @keyframes pop-in{ to{ opacity:1; transform:scale(1); } }
+
+  /* ============ FRAMED PHOTO ============ */
+  .framed-wrap{ display:inline-block; }
+  .framed{
+    position:relative;
+    padding:16px;
+  }
+  .framed::before{
+    content:""; position:absolute; inset:0;
+    border:1px dashed var(--line-strong);
+  }
+  .framed .corner{ position:absolute; width:13px; height:13px; }
+  .framed .corner.tl{ top:0; left:0; border-top:2px solid var(--fg); border-left:2px solid var(--fg); }
+  .framed .corner.tr{ top:0; right:0; border-top:2px solid var(--fg); border-right:2px solid var(--fg); }
+  .framed .corner.bl{ bottom:0; left:0; border-bottom:2px solid var(--fg); border-left:2px solid var(--fg); }
+  .framed .corner.br{ bottom:0; right:0; border-bottom:2px solid var(--fg); border-right:2px solid var(--fg); }
+  .framed-media{ width:100%; height:100%; overflow:hidden; border-radius:2px; }
+  .framed-media img{
+    width:100%; height:100%; object-fit:cover;
+    animation:kenburns 16s ease-in-out infinite alternate;
+  }
+  @keyframes kenburns{
+    0%{ transform:scale(1) translate(0,0); }
+    100%{ transform:scale(1.09) translate(-1.5%, -1.5%); }
+  }
+  .framed img{ width:100%; height:100%; object-fit:cover; animation:ken-burns 16s ease-in-out infinite alternate; }
+  @keyframes ken-burns{ from{ transform:scale(1); } to{ transform:scale(1.09); } }
+  .framed .trk{
+    position:absolute; top:-24px; left:16px;
+    font-size:11px; color:var(--muted); letter-spacing:0.02em;
+    white-space:nowrap;
+  }
+  .tilt-l{ transform:rotate(-5deg); }
+  .tilt-r{ transform:rotate(4deg); }
+
+  /* ============ HERO ============ */
+  .hero{
+    min-height:100svh; min-height:100vh;
+    display:flex; flex-direction:column; justify-content:center;
+    padding-top:6rem;
+  }
+  .hero-inner{
+    display:grid; gap:clamp(2rem,6vw,4rem);
+    grid-template-columns:1.3fr 0.7fr;
+    align-items:center;
+  }
+  .hero-word{
+    font-size:clamp(3.2rem, 13vw, 7.5rem);
+  }
+  .hero-word .line2{ margin-top:0.05em; }
+  .hero-tag{
+    margin-top:1.5rem; max-width:34ch;
+    color:var(--muted); font-size:clamp(1rem,2vw,1.15rem);
+  }
+  .hero-photo{ justify-self:end; width:100%; max-width:280px; }
+  .hero-photo .framed{ width:100%; aspect-ratio:4/5; }
+  .scroll-cue{
+    margin-top:clamp(2.5rem,6vh,4rem);
+    display:flex; align-items:center; gap:10px;
+    color:var(--muted); font-size:0.85rem;
+  }
+  .scroll-cue .line{ width:36px; height:1px; background:var(--line-strong); }
+
+  /* ============ SECTION HEADING (pixel) ============ */
+  .pixel-heading{
+    font-size:clamp(1.6rem, 4vw, 2.4rem);
+    margin:0 0 1.75rem;
+  }
+
+  /* ============ ABOUT ============ */
+  .about-grid{
+    display:grid; gap:clamp(2.5rem,6vw,4rem);
+    grid-template-columns:0.8fr 1.2fr;
+    align-items:start;
+  }
+  .about-photo{ width:100%; max-width:320px; }
+  .about-photo .framed{ aspect-ratio:4/5; }
+  .about-body p{
+    font-size:clamp(1.05rem,2vw,1.2rem);
+    line-height:1.6;
+    max-width:56ch;
+    margin:0 0 1.25rem;
+  }
+  .role-tags{
+    display:flex; flex-wrap:wrap; gap:0.6rem 1rem;
+    margin-top:1.5rem; padding-top:1.5rem;
+    border-top:1px solid var(--line);
+    color:var(--muted); font-size:0.9rem;
+  }
+
+  /* ============ WORK / CONSOLE ============ */
+  .work-intro{ max-width:52ch; color:var(--muted); margin-bottom:2.5rem; }
+
+  .console{ max-width:420px; margin-inline:auto; user-select:none; }
+  .console-body{
+    background:linear-gradient(160deg,#2c2c2b,#121211);
+    border-radius:26px;
+    padding:16px 16px 20px;
+    box-shadow:0 40px 70px -30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06);
+    border:1px solid var(--line);
+  }
+  .console-screen{
+    position:relative;
+    background:#000;
+    border-radius:12px;
+    overflow:hidden;
+    aspect-ratio:16/10;
+    border:6px solid #0d0d0c;
+  }
+  .screen-inner{ position:absolute; inset:0; }
+  .screen-inner img, .screen-inner video{
+    width:100%; height:100%; object-fit:cover;
+    animation:screen-fade .35s ease;
+  }
+  @keyframes screen-fade{ from{opacity:0;} to{opacity:1;} }
+  .scanlines{
+    position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(to bottom, rgba(255,255,255,0.05) 0 1px, transparent 1px 3px);
+    mix-blend-mode:overlay;
+  }
+  .screen-hud{
+    position:absolute; left:0; right:0; bottom:0;
+    display:flex; justify-content:space-between; align-items:center;
+    padding:7px 10px;
+    background:linear-gradient(to top, rgba(0,0,0,0.75), transparent);
+    color:#e7e7e2; font-size:11px; letter-spacing:0.03em;
+  }
+
+  .console-controls{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:22px 6px 10px;
+  }
+  .dpad{ position:relative; width:104px; height:104px; }
+  .dpad-btn{
+    position:absolute; width:34px; height:34px;
+    background:#1b1b1a; color:#c9c8c2; border:none; border-radius:7px;
+    font-size:12px; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:transform .12s ease, background .12s ease;
+  }
+  .dpad-btn:active{ transform:scale(0.88); background:#272725; }
+  .dpad-up{ top:0; left:35px; }
+  .dpad-down{ top:70px; left:35px; }
+  .dpad-left{ top:35px; left:0; }
+  .dpad-right{ top:35px; left:70px; }
+  .dpad-center{
+    position:absolute; top:35px; left:35px; width:34px; height:34px;
+    border-radius:7px; background:#0d0d0c;
+  }
+
+  .face-buttons{ position:relative; width:104px; height:104px; }
+  .face-btn{
+    position:absolute; width:34px; height:34px; border-radius:50%;
+    background:#1b1b1a; color:#c9c8c2; border:none;
+    font-size:14px; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:transform .12s ease, background .12s ease;
+  }
+  .face-btn:active{ transform:scale(0.88); background:#272725; }
+  .face-btn.is-active{ color:#f2f1ec; background:#2f2f2c; }
+  .face-triangle{ top:0; left:35px; }
+  .face-square{ top:35px; left:0; }
+  .face-circle{ top:35px; left:70px; }
+  .face-cross{ top:70px; left:35px; }
+
+  .console-strip{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:10px; padding:0 6px;
+    color:#8a8a84; font-size:10px; letter-spacing:0.04em;
+  }
+
+  .thumb-row{
+    display:flex; gap:10px; justify-content:center; flex-wrap:wrap;
+    max-width:420px; margin:1.75rem auto 0;
+  }
+  .thumb{
+    width:52px; height:36px; border-radius:5px; overflow:hidden;
+    border:2px solid transparent; padding:0; cursor:pointer;
+    background-size:cover; background-position:center; opacity:0.55;
+    transition:opacity .2s ease, border-color .2s ease;
+  }
+  .thumb.is-active{ opacity:1; border-color:var(--fg); }
+
+  /* ============ CONTACT ============ */
+  .contact-grid{
+    display:grid; gap:clamp(2rem,6vw,3rem);
+    grid-template-columns:0.6fr 1.4fr;
+    align-items:end;
+  }
+  .contact-photo{ width:100%; max-width:260px; justify-self:start; }
+  .contact-photo .framed{ aspect-ratio:4/5; }
+  .contact-word{
+    font-size:clamp(2.6rem, 9vw, 5rem);
+    display:flex; flex-wrap:wrap; align-items:baseline; gap:0.35em;
+  }
+  .contact-links{
+    margin-top:2rem; display:flex; gap:1.5rem; flex-wrap:wrap;
+  }
+  .icon-link{
+    display:flex; align-items:center; gap:10px;
+    text-decoration:none; color:var(--fg);
+    border:1px solid var(--line-strong); border-radius:999px;
+    padding:10px 18px 10px 14px; font-size:0.95rem;
+    transition:background .2s ease, color .2s ease;
+  }
+  .icon-link:hover{ background:var(--fg); color:var(--bg); }
+  .icon-link svg{ width:18px; height:18px; }
+
+  footer{
+    padding:2.5rem clamp(1.25rem,5vw,3.5rem) 5rem;
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:1rem;
+    color:var(--muted); font-size:0.85rem;
+    border-top:1px solid var(--line);
+  }
+  footer a{ text-decoration:underline; text-underline-offset:3px; }
+
+  /* ============ LIGHTBOX ============ */
+  .lightbox{
+    position:fixed; inset:0; z-index:100;
+    background:rgba(5,5,4,0.92);
+    display:none; align-items:center; justify-content:center;
+    padding:5vw;
+  }
+  .lightbox.is-open{ display:flex; }
+  .lightbox img, .lightbox video{
+    max-width:100%; max-height:85vh; border-radius:8px;
+  }
+  .lightbox-close{
+    position:absolute; top:20px; right:24px;
+    background:none; border:1px solid rgba(255,255,255,0.4);
+    color:#fff; width:38px; height:38px; border-radius:50%;
+    font-size:16px; cursor:pointer;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; scroll-behavior:auto !important; }
+  }
+</style>
+</head>
+<body>
+
+<a href="#home" class="brand-mark">js.</a>
+
+<div class="controls-fixed">
+  <button class="ctrl-link" id="invertBtn" type="button">invert</button>
+  <button class="ctrl-link" id="musicBtn" type="button">music on/off</button>
+</div>
+
+<!-- ============ HERO ============ -->
+<header class="hero" id="home">
+  <svg class="constellation draw" style="top:8%; left:6%; width:120px; height:110px;" viewBox="0 0 120 110">
+    <line x1="14" y1="90" x2="60" y2="14"></line>
+    <line x1="60" y1="14" x2="96" y2="80"></line>
+    <line x1="14" y1="90" x2="96" y2="80"></line>
+    <circle class="node-plus" cx="14" cy="90" r="4"></circle>
+    <circle class="node-plus" cx="60" cy="14" r="4"></circle>
+    <circle class="node-plus" cx="96" cy="80" r="4"></circle>
+  </svg>
+  <svg class="constellation" style="bottom:10%; right:8%; width:90px; height:70px; opacity:.5;" viewBox="0 0 90 70">
+    <line x1="6" y1="60" x2="80" y2="10"></line>
+    <circle class="node-plus" cx="6" cy="60" r="3.5"></circle>
+    <circle class="node-plus" cx="80" cy="10" r="3.5"></circle>
+  </svg>
+
+  <div class="wrap hero-inner">
+    <div>
+      <h1 class="hero-word wordmark">
+        <span>JH</span>
+        <span class="line2 italic">Samir</span>
+      </h1>
+      <!-- EDIT: your one-line role / location -->
+      <p class="hero-tag">Visual storyteller and lifelong learner based in Dhaka, Bangladesh — chasing fitness, story-based games, and the quiet frames of everyday life.</p>
+      <div class="scroll-cue"><span class="line"></span><span>scroll</span></div>
+    </div>
+
+    <div class="hero-photo">
+      <div class="framed-wrap tilt-r">
+        <div class="framed">
+          <span class="corner tl"></span><span class="corner tr"></span>
+          <span class="corner bl"></span><span class="corner br"></span>
+          <span class="trk mono">trk_01 <span class="trk-num">0.938</span></span>
+          <div class="framed-media">
+            <img src="assets/work/01.jpg" alt="Still frame from a recent project" loading="eager">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ ABOUT ============ -->
+<section id="about">
+  <svg class="constellation" style="top:6%; left:4%; width:60px; height:120px; opacity:.5;" viewBox="0 0 60 120">
+    <line x1="10" y1="10" x2="10" y2="110"></line>
+    <circle class="node-plus" cx="10" cy="10" r="3.5"></circle>
+    <circle class="node-plus" cx="10" cy="110" r="3.5"></circle>
+  </svg>
+
+  <div class="wrap about-grid">
+    <div class="about-photo">
+      <div class="framed-wrap tilt-l">
+        <div class="framed">
+          <span class="corner tl"></span><span class="corner tr"></span>
+          <span class="corner bl"></span><span class="corner br"></span>
+          <span class="trk mono">trk_02 <span class="trk-num">0.971</span></span>
+          <!-- EDIT: swap for a portrait of yourself -->
+          <div class="framed-media">
+            <img src="assets/img/about.jpg" alt="Portrait" loading="lazy">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="about-body">
+      <h2 class="pixel-heading pixel">About me</h2>
+      <p>I'm <strong>JH Samir</strong> — a visual storyteller and lifelong learner based in <strong>Dhaka, Bangladesh</strong>. What draws me to a camera is the ordinary: an afternoon of light, a street mid-motion, a face caught mid-thought — the moments easy to miss unless you go looking for them through, as I like to think of it, the lens of the human mind.</p>
+      <p>Away from the viewfinder, I'm chasing my personal best at the gym or spending an evening with a good game — both places where I first learned patience: one rep, one level, one frame at a time.</p>
+      <div class="role-tags mono">
+        <span>narrative film</span><span>·</span>
+        <span>content creation</span><span>·</span>
+        <span>photography</span><span>·</span>
+        <span>commercial</span><span>·</span>
+        <span>fitness</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WORK / PSP CONSOLE ============ -->
+<section id="work">
+  <svg class="constellation" style="top:4%; right:6%; width:100px; height:80px; opacity:.5;" viewBox="0 0 100 80">
+    <line x1="10" y1="70" x2="90" y2="10"></line>
+    <circle class="node-plus" cx="10" cy="70" r="3.5"></circle>
+    <circle class="node-plus" cx="90" cy="10" r="3.5"></circle>
+  </svg>
+
+  <div class="wrap">
+    <h2 class="pixel-heading pixel">Selected work</h2>
+    <p class="work-intro">A handful of frames from recent projects. Use the arrows to look around, the circle to open one up.</p>
+
+    <div class="console" id="pspConsole" tabindex="0" aria-label="Portfolio viewer, use left and right arrow keys to browse">
+      <div class="console-body">
+        <div class="console-screen">
+          <div class="screen-inner" id="screenInner"></div>
+          <div class="scanlines"></div>
+          <div class="screen-hud">
+            <span class="mono" id="hudIndex">01 / 05</span>
+            <span class="mono" id="hudTitle">—</span>
+          </div>
+        </div>
+
+        <div class="console-controls">
+          <div class="dpad">
+            <button class="dpad-btn dpad-up" data-dir="-1" aria-label="Previous">▲</button>
+            <button class="dpad-btn dpad-down" data-dir="1" aria-label="Next">▼</button>
+            <button class="dpad-btn dpad-left" data-dir="-1" aria-label="Previous">◀</button>
+            <button class="dpad-btn dpad-right" data-dir="1" aria-label="Next">▶</button>
+            <div class="dpad-center"></div>
+          </div>
+          <div class="face-buttons">
+            <button class="face-btn face-triangle" id="muteBtn" aria-label="Mute or unmute" title="Mute">△</button>
+            <button class="face-btn face-square" id="infoBtn" aria-label="Toggle caption" title="Caption">□</button>
+            <button class="face-btn face-cross" id="playBtn" aria-label="Play or pause" title="Play/Pause">✕</button>
+            <button class="face-btn face-circle" id="expandBtn" aria-label="View larger" title="Expand">○</button>
+          </div>
+        </div>
+
+        <div class="console-strip mono">
+          <span>select</span><span>jhsamir10 · portable</span><span>start</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="thumb-row" id="thumbRow"></div>
+  </div>
+</section>
+
+<!-- ============ CONTACT ============ -->
+<section id="contact">
+  <svg class="constellation" style="bottom:6%; left:4%; width:110px; height:90px; opacity:.5;" viewBox="0 0 110 90">
+    <line x1="10" y1="10" x2="10" y2="60"></line>
+    <line x1="10" y1="60" x2="90" y2="80"></line>
+    <circle class="node-plus" cx="10" cy="10" r="3.5"></circle>
+    <circle class="node-plus" cx="10" cy="60" r="3.5"></circle>
+    <circle class="node-plus" cx="90" cy="80" r="3.5"></circle>
+  </svg>
+
+  <div class="wrap">
+    <h2 class="wordmark contact-word" style="margin-bottom:2.5rem;">contact</h2>
+
+    <div class="contact-grid">
+      <div class="contact-photo">
+        <div class="framed-wrap tilt-r">
+          <div class="framed">
+            <span class="corner tl"></span><span class="corner tr"></span>
+            <span class="corner bl"></span><span class="corner br"></span>
+            <span class="trk mono">trk_10 <span class="trk-num">0.939</span></span>
+            <div class="framed-media">
+              <img src="assets/img/contact.jpg" alt="Behind the scenes still" loading="lazy">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="hero-word wordmark italic" style="font-size:clamp(2.4rem,7vw,4rem);">me.</p>
+        <p style="max-width:44ch; color:var(--muted); font-size:1.05rem; margin-top:1rem;">
+          Have a project in mind, or just want to talk frames? Reach out below.
+        </p>
+        <div class="contact-links">
+          <!-- EDIT: your email -->
+          <a class="icon-link" href="mailto:jhsamir2007@gmail.com">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+            email
+          </a>
+          <!-- EDIT: your Instagram handle -->
+          <a class="icon-link" href="https://www.instagram.com/jhsamir10/" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg>
+            instagram
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <!-- EDIT: your name / year -->
+  <span>© 2026 JH Samir. Built frame by frame.</span>
+  <a href="#home">back to top</a>
+</footer>
+
+<audio id="bgm" loop preload="none">
+  <source src="assets/audio/music.mp3" type="audio/mpeg">
+</audio>
+
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose" aria-label="Close">✕</button>
+  <div id="lightboxContent"></div>
+</div>
+
+<script>
+(function(){
+  /* ---------- THEME (invert) ---------- */
+  var root = document.documentElement;
+  var invertBtn = document.getElementById('invertBtn');
+  function applyTheme(t){
+    root.setAttribute('data-theme', t);
+    try{ localStorage.setItem('sk-theme', t); }catch(e){}
+    invertBtn.classList.toggle('is-on', t === 'dark');
+  }
+  var savedTheme = 'light';
+  try{ savedTheme = localStorage.getItem('sk-theme') || 'light'; }catch(e){}
+  applyTheme(savedTheme);
+  invertBtn.addEventListener('click', function(){
+    applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+  });
+
+  /* ---------- MUSIC ---------- */
+  var bgm = document.getElementById('bgm');
+  var musicBtn = document.getElementById('musicBtn');
+  var playing = false;
+  musicBtn.addEventListener('click', function(){
+    if(!playing){
+      bgm.play().then(function(){
+        playing = true;
+        musicBtn.classList.add('is-on');
+      }).catch(function(err){
+        console.warn('Add a track at assets/audio/music.mp3 to enable playback.', err);
+      });
+    } else {
+      bgm.pause();
+      playing = false;
+      musicBtn.classList.remove('is-on');
+    }
+  });
+
+  /* ---------- TRK RANDOM DECIMALS ---------- */
+  document.querySelectorAll('.trk-num').forEach(function(el){
+    el.textContent = (0.90 + Math.random() * 0.08).toFixed(3);
+  });
+
+  /* ---------- CONSOLE CLICK SOUND ---------- */
+  var audioCtx;
+  function playClick(){
+    try{
+      if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if(audioCtx.state === 'suspended') audioCtx.resume();
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(520, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.06);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.06);
+    }catch(e){ /* Web Audio unavailable, fail silently */ }
+  }
+  document.querySelectorAll('.dpad-btn, .face-btn').forEach(function(btn){
+    btn.addEventListener('click', playClick);
+  });
+
+  /* ---------- GALLERY / CONSOLE ---------- */
+  // EDIT: replace with your own work. type can be "image" or "video".
+  var gallery = [
+    { type:'image', src:'assets/work/river.jpg' },
+    { type:'image', src:'assets/work/sunset.jpg' },
+    { type:'image', src:'assets/work/boat.jpg' },
+    { type:'image', src:'assets/work/city.jpg' },
+    { type:'image', src:'assets/work/moon-1.jpg' }
+    // { type:'video', src:'assets/work/clip.mp4', poster:'assets/work/clip-poster.jpg', title:'Behind the scenes' }
+  ];
+  var current = 0;
+  var screenInner = document.getElementById('screenInner');
+  var hudIndex = document.getElementById('hudIndex');
+  var hudTitle = document.getElementById('hudTitle');
+  var thumbRow = document.getElementById('thumbRow');
+  var playBtn = document.getElementById('playBtn');
+  var muteBtn = document.getElementById('muteBtn');
+  var infoBtn = document.getElementById('infoBtn');
+  var expandBtn = document.getElementById('expandBtn');
+  var showCaption = true;
+
+  gallery.forEach(function(item, i){
+    var t = document.createElement('button');
+    t.className = 'thumb';
+    t.style.backgroundImage = "url(" + (item.poster || item.src) + ")";
+    t.setAttribute('aria-label', 'Show ' + (item.title || ('item ' + (i+1))));
+    t.addEventListener('click', function(){ current = i; render(); });
+    thumbRow.appendChild(t);
+  });
+
+  function render(){
+    var item = gallery[current];
+    screenInner.innerHTML = '';
+    if(item.type === 'video'){
+      var v = document.createElement('video');
+      v.src = item.src;
+      if(item.poster) v.poster = item.poster;
+      v.muted = true;
+      v.playsInline = true;
+      v.loop = true;
+      v.autoplay = true;
+      screenInner.appendChild(v);
+    } else {
+      var img = document.createElement('img');
+      img.src = item.src;
+      img.alt = item.title || 'Work sample';
+      screenInner.appendChild(img);
+    }
+    hudIndex.textContent = String(current+1).padStart(2,'0') + ' / ' + String(gallery.length).padStart(2,'0');
+    hudTitle.textContent = showCaption ? (item.title || '') : '';
+    Array.prototype.forEach.call(thumbRow.children, function(el, i){
+      el.classList.toggle('is-active', i === current);
+    });
+  }
+
+  function step(dir){
+    current = (current + dir + gallery.length) % gallery.length;
+    render();
+  }
+
+  document.querySelectorAll('.dpad-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ step(parseInt(btn.dataset.dir, 10)); });
+  });
+
+  playBtn.addEventListener('click', function(){
+    var v = screenInner.querySelector('video');
+    if(!v) return;
+    if(v.paused){ v.play(); playBtn.classList.add('is-active'); }
+    else { v.pause(); playBtn.classList.remove('is-active'); }
+  });
+  muteBtn.addEventListener('click', function(){
+    var v = screenInner.querySelector('video');
+    if(!v) return;
+    v.muted = !v.muted;
+    muteBtn.classList.toggle('is-active', !v.muted);
+  });
+  infoBtn.addEventListener('click', function(){
+    showCaption = !showCaption;
+    infoBtn.classList.toggle('is-active', showCaption);
+    render();
+  });
+
+  var lightbox = document.getElementById('lightbox');
+  var lightboxContent = document.getElementById('lightboxContent');
+  expandBtn.addEventListener('click', function(){
+    var item = gallery[current];
+    lightboxContent.innerHTML = '';
+    if(item.type === 'video'){
+      var v = document.createElement('video');
+      v.src = item.src; v.controls = true; v.autoplay = true; v.playsInline = true;
+      lightboxContent.appendChild(v);
+    } else {
+      var img = document.createElement('img');
+      img.src = item.src; img.alt = item.title || '';
+      lightboxContent.appendChild(img);
+    }
+    lightbox.classList.add('is-open');
+  });
+  function closeLightbox(){
+    lightbox.classList.remove('is-open');
+    lightboxContent.innerHTML = '';
+  }
+  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', function(e){ if(e.target === lightbox) closeLightbox(); });
+
+  document.getElementById('pspConsole').addEventListener('keydown', function(e){
+    if(e.key === 'ArrowLeft') step(-1);
+    if(e.key === 'ArrowRight') step(1);
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
