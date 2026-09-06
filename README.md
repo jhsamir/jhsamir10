@@ -1,4 +1,4 @@
-# shutter kif. — portfolio site
+# jH SAMIR. — portfolio site
 
 A single-page, scrolling portfolio: hero, about, a PSP-style console
 for browsing work (photos or videos), and contact — with a light/dark
