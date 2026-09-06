@@ -576,9 +576,11 @@
   <div id="lightboxContent"></div>
 </div>
 document.addEventListener('click', function unlockAudio() {
-  const musicBtn = document.getElementById('musicBtn');
-  if (musicBtn && !musicBtn.classList.contains('playing')) {
-    musicBtn.click();
+  const audio = document.getElementById('bgm');
+  if (audio && audio.paused) {
+    audio.play().catch(function(error) {
+      console.log("Audio play prevented");
+    });
   }
   document.removeEventListener('click', unlockAudio);
 }, { once: true });
