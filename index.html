@@ -575,15 +575,7 @@
   <button class="lightbox-close" id="lightboxClose" aria-label="Close">✕</button>
   <div id="lightboxContent"></div>
 </div>
-document.addEventListener('click', function unlockAudio() {
-  const audio = document.getElementById('bgm');
-  if (audio && audio.paused) {
-    audio.play().catch(function(error) {
-      console.log("Audio play prevented");
-    });
-  }
-  document.removeEventListener('click', unlockAudio);
-}, { once: true });
+
 <script>
 (function(){
   /* ---------- THEME (invert) ---------- */
