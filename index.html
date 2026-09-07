@@ -567,7 +567,7 @@
   <a href="#home">back to top</a>
 </footer>
 
-<audio id="bgm" loop preload="none" >
+<audio id="bgm" loop preload="auto" >
   <source src="assets/audio/music.mp3" type="audio/mpeg">
 </audio>
 
@@ -575,7 +575,26 @@
   <button class="lightbox-close" id="lightboxClose" aria-label="Close">✕</button>
   <div id="lightboxContent"></div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const audio = document.getElementById('bgm');
+  const musicBtn = document.getElementById('musicBtn');
+  if (!audio) return;
 
+  audio.play().then(() => {
+    if (musicBtn) musicBtn.classList.add('is-on');
+  }).catch(() => {
+    const unlock = () => {
+      audio.play().catch(() => {});
+      if (musicBtn) musicBtn.classList.add('is-on');
+      window.removeEventListener('click', unlock);
+      window.removeEventListener('touchstart', unlock);
+    };
+    window.addEventListener('click', unlock, { once: true });
+    window.addEventListener('touchstart', unlock, { once: true });
+  });
+});
+</script>
 <script>
 (function(){
   /* ---------- THEME (invert) ---------- */
