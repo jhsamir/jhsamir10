@@ -13,23 +13,37 @@
   ============================================================
   1. Search for "EDIT:" comments through this file and swap in
      your own name, bio, city, email and Instagram handle.
-  2. Photos / video: replace the files inside assets/img and
-     assets/work with your own, keeping the same filenames —
-     or edit the `gallery` array near the bottom of this file
-     to point at new filenames. To add a video item, use:
-       { type: "video", src: "assets/work/my-clip.mp4",
-         poster: "assets/work/my-clip-poster.jpg", title: "Reel" }
+  2. Photos / video on the 3D PSP: replace the files inside
+     assets/work with your own, or edit the SK_WORKS list near
+     the bottom of this file (search for "SK_WORKS"). To add a
+     video item use:
+       { img: "assets/work/my-clip-poster.jpg",
+         vid: "assets/work/my-clip.mp4",
+         link: "assets/work/my-clip.mp4" }
   3. Music: drop an .mp3 file at assets/audio/music.mp3
      (see assets/audio/README.txt). The "music on/off" control
      already wired up below.
-  4. Colors / type live in the CSS variables at the top of the
+  4. The 3D PSP itself needs two files to exist:
+       assets/models/psp.glb   (the 3D model)
+       assets/js/psp.js        (the code that runs it)
+  5. Colors / type live in the CSS variables at the top of the
      <style> block if you want to adjust the palette or fonts.
   ============================================================
 -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,500;0,700;0,800;1,600&family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,500;0,700;0,800;1,600&family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet">
+
+<!-- three.js, loaded from a CDN. The PSP code (assets/js/psp.js) imports it by these names. -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
 
 <style>
   /* ============ TOKENS ============ */
@@ -109,10 +123,12 @@
     display:flex; flex-direction:column; align-items:flex-end; gap:6px;
   }
   .ctrl-link{
-    font-family:'Space Grotesk',sans-serif; font-size:0.85rem;
+    font-family:'Space Grotesk',sans-serif; font-size:0.9rem;
     background:none; border:none; color:var(--fg); cursor:pointer;
-    padding:4px 2px; text-decoration:underline; text-underline-offset:3px;
+    padding:9px 6px; text-decoration:underline; text-underline-offset:3px;
     text-decoration-color:var(--line-strong);
+    touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+    min-height:36px;
   }
   .ctrl-link:hover{ text-decoration-color:var(--fg); }
   .ctrl-link.is-on{ color:var(--fg); font-weight:600; }
@@ -179,7 +195,7 @@
     padding-top:6rem;
   }
   .hero-inner{
-    display:grid; gap:clamp(2rem,6vw,4rem);
+    display:grid; gap:clamp(1.25rem,5vw,4rem);
     grid-template-columns:1.3fr 0.7fr;
     align-items:center;
   }
@@ -191,7 +207,7 @@
     margin-top:1.5rem; max-width:34ch;
     color:var(--muted); font-size:clamp(1rem,2vw,1.15rem);
   }
-  .hero-photo{ justify-self:end; width:100%; max-width:280px; }
+  .hero-photo{ justify-self:end; width:min(280px, 42vw); }
   .hero-photo .framed{ width:100%; aspect-ratio:4/5; }
   .scroll-cue{
     margin-top:clamp(2.5rem,6vh,4rem);
@@ -208,12 +224,11 @@
 
   /* ============ ABOUT ============ */
   .about-grid{
-    display:grid; gap:clamp(2.5rem,6vw,4rem);
+    display:grid; gap:clamp(1.5rem,6vw,4rem);
     grid-template-columns:0.8fr 1.2fr;
     align-items:start;
   }
   .about-photo{ width:100%; max-width:320px; }
-  .about-photo .framed{ aspect-ratio:4/5; }
   .about-body p{
     font-size:clamp(1.05rem,2vw,1.2rem);
     line-height:1.6;
@@ -227,105 +242,74 @@
     color:var(--muted); font-size:0.9rem;
   }
 
-  /* ============ WORK / CONSOLE ============ */
-  .work-intro{ max-width:52ch; color:var(--muted); margin-bottom:2.5rem; }
+  /* ============ WORK / 3D PSP ============ */
+  .work-intro{ max-width:52ch; color:var(--muted); margin-bottom:1.5rem; }
 
-  .console{ max-width:420px; margin-inline:auto; user-select:none; }
-  .console-body{
-    background:linear-gradient(160deg,#2c2c2b,#121211);
-    border-radius:26px;
-    padding:16px 16px 20px;
-    box-shadow:0 40px 70px -30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06);
-    border:1px solid var(--line);
-  }
-  .console-screen{
+  /* The stage is what psp.js measures: the canvas is sized to fill it. */
+  .machine__stage{
     position:relative;
-    background:#000;
-    border-radius:12px;
+    height:clamp(380px, 74vh, 720px);
     overflow:hidden;
-    aspect-ratio:16/10;
-    border:6px solid #0d0d0c;
+    user-select:none; -webkit-user-select:none;
   }
-  .screen-inner{ position:absolute; inset:0; }
-  .screen-inner img, .screen-inner video{
-    width:100%; height:100%; object-fit:cover;
-    animation:screen-fade .35s ease;
+  /* phones: the PSP already fills the width, so the stage only needs to be a little taller than the PSP itself */
+  @media (max-width:719px){
+    .machine__stage{ height:clamp(280px, 94vw, 480px); }
   }
-  @keyframes screen-fade{ from{opacity:0;} to{opacity:1;} }
-  .scanlines{
-    position:absolute; inset:0; pointer-events:none;
-    background:repeating-linear-gradient(to bottom, rgba(255,255,255,0.05) 0 1px, transparent 1px 3px);
-    mix-blend-mode:overlay;
+  /* dotted flower that turns slowly behind the (transparent) 3D canvas */
+  .machine__flower{
+    position:absolute; left:50%; top:50%;
+    width:min(98%, 700px); aspect-ratio:1;
+    transform:translate(-50%,-50%);
+    color:var(--fg); opacity:0.2;
+    pointer-events:none;
   }
-  .screen-hud{
-    position:absolute; left:0; right:0; bottom:0;
-    display:flex; justify-content:space-between; align-items:center;
-    padding:7px 10px;
-    background:linear-gradient(to top, rgba(0,0,0,0.75), transparent);
-    color:#e7e7e2; font-size:11px; letter-spacing:0.03em;
+  .machine__flower svg{
+    display:block; width:100%; height:100%;
+    will-change:transform;
+    animation:flower-spin 90s linear infinite;
   }
+  @keyframes flower-spin{ to{ transform:rotate(360deg); } }
 
-  .console-controls{
-    display:flex; justify-content:space-between; align-items:center;
-    padding:22px 6px 10px;
+  #pspCanvas{
+    position:relative; display:block;
+    width:100%; height:100%;
+    /* sideways swipes turn the PSP, up/down swipes still scroll the page */
+    touch-action:pan-y;
+    -webkit-tap-highlight-color:transparent;
   }
-  .dpad{ position:relative; width:104px; height:104px; }
-  .dpad-btn{
-    position:absolute; width:34px; height:34px;
-    background:#1b1b1a; color:#c9c8c2; border:none; border-radius:7px;
-    font-size:12px; display:flex; align-items:center; justify-content:center;
-    cursor:pointer; transition:transform .12s ease, background .12s ease;
+  .psp-loading{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:1rem;
+    color:var(--muted); font-size:0.85rem; letter-spacing:0.06em; text-transform:uppercase;
+    pointer-events:none;
+    transition:opacity .5s ease;
   }
-  .dpad-btn:active{ transform:scale(0.88); background:#272725; }
-  .dpad-up{ top:0; left:35px; }
-  .dpad-down{ top:70px; left:35px; }
-  .dpad-left{ top:35px; left:0; }
-  .dpad-right{ top:35px; left:70px; }
-  .dpad-center{
-    position:absolute; top:35px; left:35px; width:34px; height:34px;
-    border-radius:7px; background:#0d0d0c;
-  }
+  .psp-loading.is-off{ opacity:0; }
 
-  .face-buttons{ position:relative; width:104px; height:104px; }
-  .face-btn{
-    position:absolute; width:34px; height:34px; border-radius:50%;
-    background:#1b1b1a; color:#c9c8c2; border:none;
-    font-size:14px; display:flex; align-items:center; justify-content:center;
-    cursor:pointer; transition:transform .12s ease, background .12s ease;
+  .rail{
+    display:flex; justify-content:space-between; align-items:center; gap:1rem;
+    margin-top:0.5rem; padding-top:0.9rem;
+    border-top:1px solid var(--line);
+    font-size:0.9rem;
   }
-  .face-btn:active{ transform:scale(0.88); background:#272725; }
-  .face-btn.is-active{ color:#f2f1ec; background:#2f2f2c; }
-  .face-triangle{ top:0; left:35px; }
-  .face-square{ top:35px; left:0; }
-  .face-circle{ top:35px; left:70px; }
-  .face-cross{ top:70px; left:35px; }
-
-  .console-strip{
-    display:flex; justify-content:space-between; align-items:center;
-    margin-top:10px; padding:0 6px;
-    color:#8a8a84; font-size:10px; letter-spacing:0.04em;
+  .rail__count{ letter-spacing:0.06em; }
+  .rail.is-swap .rail__count{ animation:rail-swap .35s ease; }
+  @keyframes rail-swap{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:none; } }
+  .rail__open{
+    text-decoration:underline; text-underline-offset:3px;
+    text-decoration-color:var(--line-strong);
   }
-
-  .thumb-row{
-    display:flex; gap:10px; justify-content:center; flex-wrap:wrap;
-    max-width:420px; margin:1.75rem auto 0;
-  }
-  .thumb{
-    width:52px; height:36px; border-radius:5px; overflow:hidden;
-    border:2px solid transparent; padding:0; cursor:pointer;
-    background-size:cover; background-position:center; opacity:0.55;
-    transition:opacity .2s ease, border-color .2s ease;
-  }
-  .thumb.is-active{ opacity:1; border-color:var(--fg); }
+  .rail__open:hover{ text-decoration-color:var(--fg); }
 
   /* ============ CONTACT ============ */
   .contact-grid{
-    display:grid; gap:clamp(2rem,6vw,3rem);
+    display:grid; gap:clamp(1.5rem,6vw,3rem);
     grid-template-columns:0.6fr 1.4fr;
     align-items:end;
   }
   .contact-photo{ width:100%; max-width:260px; justify-self:start; }
-  .contact-photo .framed{ aspect-ratio:4/5; }
   .contact-word{
     font-size:clamp(2.6rem, 9vw, 5rem);
     display:flex; flex-wrap:wrap; align-items:baseline; gap:0.35em;
@@ -343,6 +327,17 @@
   .icon-link:hover{ background:var(--fg); color:var(--bg); }
   .icon-link svg{ width:18px; height:18px; }
 
+  /* Pre-composed photo assets (dice / card) that already carry their own
+     framing + labels — shown plainly, just tilted, no extra corner overlay. */
+  .object-photo{
+    border-radius:4px; overflow:hidden;
+    box-shadow:0 24px 48px -24px rgba(0,0,0,0.45);
+  }
+  .object-photo img{
+    width:100%; height:auto; display:block;
+    animation:kenburns 16s ease-in-out infinite alternate;
+  }
+
   footer{
     padding:2.5rem clamp(1.25rem,5vw,3.5rem) 5rem;
     display:flex; justify-content:space-between; flex-wrap:wrap; gap:1rem;
@@ -350,24 +345,6 @@
     border-top:1px solid var(--line);
   }
   footer a{ text-decoration:underline; text-underline-offset:3px; }
-
-  /* ============ LIGHTBOX ============ */
-  .lightbox{
-    position:fixed; inset:0; z-index:100;
-    background:rgba(5,5,4,0.92);
-    display:none; align-items:center; justify-content:center;
-    padding:5vw;
-  }
-  .lightbox.is-open{ display:flex; }
-  .lightbox img, .lightbox video{
-    max-width:100%; max-height:85vh; border-radius:8px;
-  }
-  .lightbox-close{
-    position:absolute; top:20px; right:24px;
-    background:none; border:1px solid rgba(255,255,255,0.4);
-    color:#fff; width:38px; height:38px; border-radius:50%;
-    font-size:16px; cursor:pointer;
-  }
 
   @media (prefers-reduced-motion: reduce){
     *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; scroll-behavior:auto !important; }
@@ -417,7 +394,7 @@
           <span class="corner bl"></span><span class="corner br"></span>
           <span class="trk mono">trk_01 <span class="trk-num">0.938</span></span>
           <div class="framed-media">
-            <img src="assets/work/01.jpg" alt="Still frame from a recent project" loading="eager">
+            <img src="assets/img/hero-portrait.jpg" alt="JH Samir" loading="eager">
           </div>
         </div>
       </div>
@@ -435,16 +412,8 @@
 
   <div class="wrap about-grid">
     <div class="about-photo">
-      <div class="framed-wrap tilt-l">
-        <div class="framed">
-          <span class="corner tl"></span><span class="corner tr"></span>
-          <span class="corner bl"></span><span class="corner br"></span>
-          <span class="trk mono">trk_02 <span class="trk-num">0.971</span></span>
-          <!-- EDIT: swap for a portrait of yourself -->
-          <div class="framed-media">
-            <img src="assets/img/about.jpg" alt="Portrait" loading="lazy">
-          </div>
-        </div>
+      <div class="object-photo tilt-l">
+        <img src="assets/img/about-dice.jpg" alt="A die — a small nod to patience and chance" loading="lazy">
       </div>
     </div>
 
@@ -463,8 +432,11 @@
   </div>
 </section>
 
-<!-- ============ WORK / PSP CONSOLE ============ -->
-<section id="work">
+<!-- ============ WORK / 3D PSP ============
+     psp.js looks for these exact ids and classes, so please don't rename them:
+       .machine  .machine__stage  #pspCanvas  #pspLoading  #rail  #railIdx  #railTot  #railOpen
+-->
+<section id="work" class="machine">
   <svg class="constellation" style="top:4%; right:6%; width:100px; height:80px; opacity:.5;" viewBox="0 0 100 80">
     <line x1="10" y1="70" x2="90" y2="10"></line>
     <circle class="node-plus" cx="10" cy="70" r="3.5"></circle>
@@ -473,42 +445,18 @@
 
   <div class="wrap">
     <h2 class="pixel-heading pixel">Selected work</h2>
-    <p class="work-intro">A handful of frames from recent projects. Use the arrows to look around, the circle to open one up.</p>
+    <p class="work-intro">A handful of frames from recent projects. Press the left and right d-pad (or your arrow keys) to browse, tap ✕ or the screen to open a frame, and drag to turn the machine.</p>
 
-    <div class="console" id="pspConsole" tabindex="0" aria-label="Portfolio viewer, use left and right arrow keys to browse">
-      <div class="console-body">
-        <div class="console-screen">
-          <div class="screen-inner" id="screenInner"></div>
-          <div class="scanlines"></div>
-          <div class="screen-hud">
-            <span class="mono" id="hudIndex">01 / 05</span>
-            <span class="mono" id="hudTitle">—</span>
-          </div>
-        </div>
-
-        <div class="console-controls">
-          <div class="dpad">
-            <button class="dpad-btn dpad-up" data-dir="-1" aria-label="Previous">▲</button>
-            <button class="dpad-btn dpad-down" data-dir="1" aria-label="Next">▼</button>
-            <button class="dpad-btn dpad-left" data-dir="-1" aria-label="Previous">◀</button>
-            <button class="dpad-btn dpad-right" data-dir="1" aria-label="Next">▶</button>
-            <div class="dpad-center"></div>
-          </div>
-          <div class="face-buttons">
-            <button class="face-btn face-triangle" id="muteBtn" aria-label="Mute or unmute" title="Mute">△</button>
-            <button class="face-btn face-square" id="infoBtn" aria-label="Toggle caption" title="Caption">□</button>
-            <button class="face-btn face-cross" id="playBtn" aria-label="Play or pause" title="Play/Pause">✕</button>
-            <button class="face-btn face-circle" id="expandBtn" aria-label="View larger" title="Expand">○</button>
-          </div>
-        </div>
-
-        <div class="console-strip mono">
-          <span>select</span><span>jhsamir10 · portable</span><span>start</span>
-        </div>
-      </div>
+    <div class="machine__stage">
+      <div class="machine__flower" id="flower" aria-hidden="true"></div>
+      <canvas id="pspCanvas" role="img" aria-label="Interactive 3D PSP showing selected work. Use the left and right arrow keys to browse."></canvas>
+      <div class="psp-loading mono" id="pspLoading">loading hardware…</div>
     </div>
 
-    <div class="thumb-row" id="thumbRow"></div>
+    <div class="rail mono" id="rail">
+      <span class="rail__count"><span id="railIdx">01</span><span id="railTot">/03</span></span>
+      <a class="rail__open" id="railOpen" href="#" target="_blank" rel="noopener">open frame ↗</a>
+    </div>
   </div>
 </section>
 
@@ -527,15 +475,8 @@
 
     <div class="contact-grid">
       <div class="contact-photo">
-        <div class="framed-wrap tilt-r">
-          <div class="framed">
-            <span class="corner tl"></span><span class="corner tr"></span>
-            <span class="corner bl"></span><span class="corner br"></span>
-            <span class="trk mono">trk_10 <span class="trk-num">0.939</span></span>
-            <div class="framed-media">
-              <img src="assets/img/contact.jpg" alt="Behind the scenes still" loading="lazy">
-            </div>
-          </div>
+        <div class="object-photo tilt-r">
+          <img src="assets/img/contact-card.jpg" alt="A playing card, tucked in" loading="lazy">
         </div>
       </div>
 
@@ -564,37 +505,49 @@
 <footer>
   <!-- EDIT: your name / year -->
   <span>© 2026 JH Samir. Built frame by frame.</span>
+  <!-- Required credit: the PSP model is licensed CC BY 4.0, which means the author must be named. -->
+  <span>3D model “Sony PSP” by <a href="https://sketchfab.com/3d-models/sony-psp-dca89d10ec304d0cab76837750df7761" target="_blank" rel="noopener">Ilya Ostrovsky</a> · <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a></span>
   <a href="#home">back to top</a>
 </footer>
 
-<audio id="bgm" loop preload="auto" >
+<audio id="bgm" loop preload="none">
   <source src="assets/audio/music.mp3" type="audio/mpeg">
 </audio>
 
-<div class="lightbox" id="lightbox">
-  <button class="lightbox-close" id="lightboxClose" aria-label="Close">✕</button>
-  <div id="lightboxContent"></div>
-</div>
+<!-- ============================================================
+     3D PSP — data + glue (this runs BEFORE psp.js)
+     ============================================================ -->
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const audio = document.getElementById('bgm');
-  const musicBtn = document.getElementById('musicBtn');
-  if (!audio) return;
+/* The photos / videos shown on the PSP screen.
+   EDIT: replace with your own work.
+     img  = the picture shown on the screen (for a video: its poster image)
+     vid  = (optional) a short mp4 that plays on the screen
+     link = what opens in a new tab when you press ✕ or tap the screen */
+window.SK_WORKS = [
+  { img: 'assets/work/nature-01.jpg', link: 'assets/work/nature-01.jpg' },   // Riverbank framed by trees
+  { img: 'assets/work/nature-02.jpg', link: 'assets/work/nature-02.jpg' },   // Sunset over the treeline
+  { img: 'assets/work/nature-03.jpg', link: 'assets/work/nature-03.jpg' }    // Boat resting on the water
+  // , { img: 'assets/work/clip-poster.jpg', vid: 'assets/work/clip.mp4', link: 'assets/work/clip.mp4' }
+];
 
-  audio.play().then(() => {
-    if (musicBtn) musicBtn.classList.add('is-on');
-  }).catch(() => {
-    const unlock = () => {
-      audio.play().catch(() => {});
-      if (musicBtn) musicBtn.classList.add('is-on');
-      window.removeEventListener('click', unlock);
-      window.removeEventListener('touchstart', unlock);
-    };
-    window.addEventListener('click', unlock, { once: true });
-    window.addEventListener('touchstart', unlock, { once: true });
-  });
-});
+/* Small bridge between this page and psp.js.
+   psp.js calls SK.fireReady() when the model has loaded, and offers
+   SK.setShellInvert(true/false) to turn the black shell white. */
+window.SK = {
+  dark: false,
+  ready: false,
+  fireReady: function(){
+    this.ready = true;
+    if (this.setShellInvert) this.setShellInvert(this.dark);   // catch up if "invert" was already on
+  },
+  onReady: function(f){ f(); }
+};
 </script>
+
+<!-- the 3D PSP. type="module" is required; onerror shows a message if three.js can't be fetched -->
+<script type="module" src="assets/js/psp.js"
+        onerror="var l=document.getElementById('pspLoading'); if(l) l.textContent='3D viewer could not start — check your connection and refresh';"></script>
+
 <script>
 (function(){
   /* ---------- THEME (invert) ---------- */
@@ -604,6 +557,9 @@ document.addEventListener('DOMContentLoaded', () => {
     root.setAttribute('data-theme', t);
     try{ localStorage.setItem('sk-theme', t); }catch(e){}
     invertBtn.classList.toggle('is-on', t === 'dark');
+    /* dark page -> white PSP shell, light page -> black PSP shell */
+    SK.dark = (t === 'dark');
+    if (SK.ready && SK.setShellInvert) SK.setShellInvert(SK.dark);
   }
   var savedTheme = 'light';
   try{ savedTheme = localStorage.getItem('sk-theme') || 'light'; }catch(e){}
@@ -636,138 +592,35 @@ document.addEventListener('DOMContentLoaded', () => {
     el.textContent = (0.90 + Math.random() * 0.08).toFixed(3);
   });
 
-  /* ---------- CONSOLE CLICK SOUND ---------- */
-  var audioCtx;
-  function playClick(){
-    try{
-      if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if(audioCtx.state === 'suspended') audioCtx.resume();
-      var osc = audioCtx.createOscillator();
-      var gain = audioCtx.createGain();
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(520, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.06);
-      osc.connect(gain).connect(audioCtx.destination);
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.06);
-    }catch(e){ /* Web Audio unavailable, fail silently */ }
-  }
-  document.querySelectorAll('.dpad-btn, .face-btn').forEach(function(btn){
-    btn.addEventListener('click', playClick);
-  });
+  /* ---------- KEEP THE PSP KEYS OFF PAGE CONTROLS ----------
+     psp.js listens for Enter / arrow keys anywhere on the page. This stops those
+     keys reaching it while a button or link has focus, so pressing Enter on
+     "invert" or "music on/off" doesn't also open a photo in a new tab. */
+  window.addEventListener('keydown', function(e){
+    var t = e.target;
+    if (t && t.closest && t.closest('button, a, input, textarea, select')) e.stopPropagation();
+  }, true);
 
-  /* ---------- GALLERY / CONSOLE ---------- */
-  // EDIT: replace with your own work. type can be "image" or "video".
-  var gallery = [
-    { type:'image', src:'assets/work/river.jpg' },
-    { type:'image', src:'assets/work/sunset.jpg' },
-    { type:'image', src:'assets/work/boat.jpg' },
-    { type:'image', src:'assets/work/city.jpg' },
-    { type:'image', src:'assets/work/moon-1.jpg' }
-    // { type:'video', src:'assets/work/clip.mp4', poster:'assets/work/clip-poster.jpg', title:'Behind the scenes' }
-  ];
-  var current = 0;
-  var screenInner = document.getElementById('screenInner');
-  var hudIndex = document.getElementById('hudIndex');
-  var hudTitle = document.getElementById('hudTitle');
-  var thumbRow = document.getElementById('thumbRow');
-  var playBtn = document.getElementById('playBtn');
-  var muteBtn = document.getElementById('muteBtn');
-  var infoBtn = document.getElementById('infoBtn');
-  var expandBtn = document.getElementById('expandBtn');
-  var showCaption = true;
-
-  gallery.forEach(function(item, i){
-    var t = document.createElement('button');
-    t.className = 'thumb';
-    t.style.backgroundImage = "url(" + (item.poster || item.src) + ")";
-    t.setAttribute('aria-label', 'Show ' + (item.title || ('item ' + (i+1))));
-    t.addEventListener('click', function(){ current = i; render(); });
-    thumbRow.appendChild(t);
-  });
-
-  function render(){
-    var item = gallery[current];
-    screenInner.innerHTML = '';
-    if(item.type === 'video'){
-      var v = document.createElement('video');
-      v.src = item.src;
-      if(item.poster) v.poster = item.poster;
-      v.muted = true;
-      v.playsInline = true;
-      v.loop = true;
-      v.autoplay = true;
-      screenInner.appendChild(v);
-    } else {
-      var img = document.createElement('img');
-      img.src = item.src;
-      img.alt = item.title || 'Work sample';
-      screenInner.appendChild(img);
+  /* ---------- HALFTONE FLOWER (sits behind the PSP) ---------- */
+  (function(){
+    var host = document.getElementById('flower');
+    if(!host) return;
+    var S = 600, C = S / 2, STEP = 14, PETALS = 8, dots = '';
+    for(var row = 0; row * STEP <= S; row++){
+      var y = row * STEP - C;
+      var shift = (row % 2) ? STEP / 2 : 0;                 // staggered rows = classic halftone grid
+      for(var x = -C + shift; x <= C; x += STEP){
+        var r = Math.sqrt(x * x + y * y);
+        var a = Math.atan2(y, x);
+        var edge = C * 0.97 * (0.55 + 0.45 * Math.abs(Math.cos(PETALS / 2 * a)));   // petal outline
+        if(r >= edge) continue;
+        var rad = STEP * 0.46 * Math.pow(1 - r / edge, 0.7);                          // big dots inside, tiny at the rim
+        if(rad < 0.6) continue;
+        dots += '<circle cx="' + (x + C).toFixed(1) + '" cy="' + (y + C).toFixed(1) + '" r="' + rad.toFixed(2) + '"/>';
+      }
     }
-    hudIndex.textContent = String(current+1).padStart(2,'0') + ' / ' + String(gallery.length).padStart(2,'0');
-    hudTitle.textContent = showCaption ? (item.title || '') : '';
-    Array.prototype.forEach.call(thumbRow.children, function(el, i){
-      el.classList.toggle('is-active', i === current);
-    });
-  }
-
-  function step(dir){
-    current = (current + dir + gallery.length) % gallery.length;
-    render();
-  }
-
-  document.querySelectorAll('.dpad-btn').forEach(function(btn){
-    btn.addEventListener('click', function(){ step(parseInt(btn.dataset.dir, 10)); });
-  });
-
-  playBtn.addEventListener('click', function(){
-    var v = screenInner.querySelector('video');
-    if(!v) return;
-    if(v.paused){ v.play(); playBtn.classList.add('is-active'); }
-    else { v.pause(); playBtn.classList.remove('is-active'); }
-  });
-  muteBtn.addEventListener('click', function(){
-    var v = screenInner.querySelector('video');
-    if(!v) return;
-    v.muted = !v.muted;
-    muteBtn.classList.toggle('is-active', !v.muted);
-  });
-  infoBtn.addEventListener('click', function(){
-    showCaption = !showCaption;
-    infoBtn.classList.toggle('is-active', showCaption);
-    render();
-  });
-
-  var lightbox = document.getElementById('lightbox');
-  var lightboxContent = document.getElementById('lightboxContent');
-  expandBtn.addEventListener('click', function(){
-    var item = gallery[current];
-    lightboxContent.innerHTML = '';
-    if(item.type === 'video'){
-      var v = document.createElement('video');
-      v.src = item.src; v.controls = true; v.autoplay = true; v.playsInline = true;
-      lightboxContent.appendChild(v);
-    } else {
-      var img = document.createElement('img');
-      img.src = item.src; img.alt = item.title || '';
-      lightboxContent.appendChild(img);
-    }
-    lightbox.classList.add('is-open');
-  });
-  function closeLightbox(){
-    lightbox.classList.remove('is-open');
-    lightboxContent.innerHTML = '';
-  }
-  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
-  lightbox.addEventListener('click', function(e){ if(e.target === lightbox) closeLightbox(); });
-
-  document.getElementById('pspConsole').addEventListener('keydown', function(e){
-    if(e.key === 'ArrowLeft') step(-1);
-    if(e.key === 'ArrowRight') step(1);
-  });
-
-  render();
+    host.innerHTML = '<svg viewBox="0 0 ' + S + ' ' + S + '" fill="currentColor">' + dots + '</svg>';
+  })();
 })();
 </script>
 
