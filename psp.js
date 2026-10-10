@@ -8,6 +8,13 @@
    · The screen is the main light source: its average colour
      drives point lights, so a white frame really does throw
      white light across the buttons and shell.
+
+   CREDITS
+   3D model "Sony PSP" by Ilya Ostrovsky
+     https://sketchfab.com/3d-models/sony-psp-dca89d10ec304d0cab76837750df7761
+     Licensed under CC BY 4.0 — http://creativecommons.org/licenses/by/4.0/
+
+   Files: this script and psp.glb must sit in the same folder as index.html.
    ============================================================ */
 
 import * as THREE from 'three';
@@ -28,10 +35,15 @@ const loadingEl = document.getElementById('pspLoading');
 
 const railIdx = document.getElementById('railIdx');
 const railTot = document.getElementById('railTot');
-const railOpen = document.getElementById('railOpen');
 const railEl = document.getElementById('rail');
 
-if (canvas && WORKS.length) init();
+if (canvas && WORKS.length) {
+  try { init(); }
+  catch (err) {
+    console.error('[psp] could not start', err);
+    if (loadingEl) loadingEl.textContent = '3D viewer could not start — this browser may not support WebGL';
+  }
+}
 
 function init() {
 
@@ -199,6 +211,7 @@ function init() {
   const buttons = {};                 // role -> { mesh, home:Vector3, axis:Vector3, t:0 }
   const pressable = [];
   let modelReady = false;
+  let fitCorners = null, fitMaxZ = 0;   // the machine's exact box, used by fitToView
   const shellMats = [];
 
   /* Let the shell invert on demand without touching the screen or the lights.
@@ -229,13 +242,14 @@ function init() {
     bloom.strength = on ? 0.0 : 0.42;
   };
 
+  /* psp.glb is looked up next to this script, wherever the pair is hosted */
   new GLTFLoader().load(
-    'assets/models/psp.glb',
+    new URL('psp.glb', import.meta.url).href,
     (gltf) => { setup(gltf.scene); },
     undefined,
     (err) => {
       console.error('[psp] model failed', err);
-      if (loadingEl) loadingEl.textContent = 'HARDWARE UNAVAILABLE — assets/models/psp.glb did not load';
+      if (loadingEl) loadingEl.textContent = 'HARDWARE UNAVAILABLE — psp.glb did not load';
       SK.fireReady();
     }
   );
@@ -308,6 +322,27 @@ function init() {
     model.quaternion.setFromRotationMatrix(basis).invert();
     model.updateWorldMatrix(true, true);
 
+    /* The button row only gives an approximate "down", so the export's own tilt is
+       arbitrary. The screen is a true rectangle: level the model on its long edge,
+       then rest it at a deliberate 6 degree tilt (change REST_TILT below to taste;
+       0 = dead level). Dragging still springs back to this resting pose. */
+    {
+      const sp = screenMesh.geometry.getAttribute('position');
+      const mw = screenMesh.matrixWorld;
+      const tv = new THREE.Vector3();
+      const xs = [], ys = [];
+      let mx = 0, my = 0;
+      for (let i = 0; i < sp.count; i++) { tv.fromBufferAttribute(sp, i).applyMatrix4(mw); xs.push(tv.x); ys.push(tv.y); mx += tv.x; my += tv.y; }
+      mx /= xs.length; my /= xs.length;
+      let Sxx = 0, Syy = 0, Sxy = 0;
+      for (let i = 0; i < xs.length; i++) { const dx = xs[i] - mx, dy = ys[i] - my; Sxx += dx * dx; Syy += dy * dy; Sxy += dx * dy; }
+      const tilt = 0.5 * Math.atan2(2 * Sxy, Sxx - Syy);       // long edge vs horizontal
+      const level = Math.abs(tilt) < 0.35 ? -tilt : 0;          // undo whatever the export left crooked...
+      const REST_TILT = THREE.MathUtils.degToRad(-6);           // ...then rest it at a deliberate 6 degrees (clockwise)
+      model.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), level + REST_TILT));
+      model.updateWorldMatrix(true, true);
+    }
+
     /* scale, then centre on the origin by moving the group itself —
        no inverse-quaternion gymnastics, no residual offset */
     const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
@@ -315,6 +350,17 @@ function init() {
     model.updateWorldMatrix(true, true);
     model.position.sub(new THREE.Box3().setFromObject(model).getCenter(new THREE.Vector3()));
     model.updateWorldMatrix(true, true);
+
+    /* measure the machine exactly (vertex-accurate, not a loose axis box) and keep its 8 corners */
+    const exact = new THREE.Box3().setFromObject(model, true);
+    model.position.sub(exact.getCenter(new THREE.Vector3()));
+    model.updateWorldMatrix(true, true);
+    exact.setFromObject(model, true);
+    fitCorners = [];
+    for (let i = 0; i < 8; i++) {
+      fitCorners.push(new THREE.Vector3(i & 1 ? exact.max.x : exact.min.x, i & 2 ? exact.max.y : exact.min.y, i & 4 ? exact.max.z : exact.min.z));
+    }
+    fitMaxZ = exact.max.z;
     fitToView();
 
     /* --- build the screen's own UVs from the plane ----------
@@ -629,7 +675,6 @@ function init() {
 
     if (railIdx) railIdx.textContent = String(current + 1).padStart(2, '0');
     if (railTot) railTot.textContent = '/' + String(WORKS.length).padStart(2, '0');
-    if (railOpen) railOpen.href = w.link;
     if (railEl && !instant && !reduce) {
       railEl.classList.remove('is-swap');
       void railEl.offsetWidth;
@@ -680,8 +725,9 @@ function init() {
 
   function open() {
     const w = WORKS[current];
-    if (!w) return;
-    window.open(w.link, '_blank', 'noopener');
+    const url = w && (w.link || w.img);
+    if (!url) return;
+    window.open(url, '_blank', 'noopener');
   }
 
   /* ---------------------------------------------------------- */
@@ -773,12 +819,16 @@ function init() {
 
   window.addEventListener('keydown', (e) => {
     if (!inView) return;
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    const t = e.target;
+    if (t && t.closest && t.closest('input, textarea, select, [contenteditable]')) return;
     const k = e.key;
+    /* left / right browse; up / down keep scrolling the page as normal */
     if (k === 'ArrowLeft') { press('left'); e.preventDefault(); }
     else if (k === 'ArrowRight') { press('right'); e.preventDefault(); }
-    else if (k === 'ArrowUp') { press('triangle'); e.preventDefault(); }
-    else if (k === 'ArrowDown') { press('square'); e.preventDefault(); }
-    else if (k === 'Enter' || k === 'x' || k === 'X') { press('cross'); }
+    /* Enter / X open the frame — but not while a button or link has focus, so
+       pressing Enter on "invert" or "music on/off" doesn't also open a photo */
+    else if ((k === 'Enter' || k === 'x' || k === 'X') && !(t && t.closest && t.closest('button, a'))) press('cross');
   });
 
   /* ---------------------------------------------------------- */
@@ -816,22 +866,31 @@ function init() {
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
 
-  /* pull the camera to whatever distance makes the machine fill the frame */
+  /* Pull the camera back until the machine fills a set share of the frame. The
+     machine's real corners are projected through the camera, so the result is
+     right at any aspect ratio — phones, tablets and wide screens alike. */
+  const _fv = new THREE.Vector3();
   function fitToView() {
-    if (!modelBox()) return;
-    const b = modelBox();
-    const size = b.getSize(new THREE.Vector3());
-    const fill = window.innerWidth < 720 ? 0.94 : 0.72;   // fraction of the frame
-    const vFov = THREE.MathUtils.degToRad(camera.fov);
-    const distH = (size.y / 2) / Math.tan(vFov / 2);
-    const distW = (size.x / 2) / (Math.tan(vFov / 2) * camera.aspect);
-    camera.position.set(0, 0, Math.max(distH, distW) / fill + size.z);
+    if (!fitCorners) return;
+    const narrow = window.innerWidth < 720;
+    const fx = narrow ? 0.94 : 0.80;     // share of the frame WIDTH the PSP may use
+    const fy = narrow ? 0.90 : 0.86;     // …and of the frame HEIGHT
+    const fits = (d) => {
+      camera.position.set(0, 0, d);
+      camera.lookAt(0, 0, 0);
+      camera.updateMatrixWorld(true);
+      for (let i = 0; i < fitCorners.length; i++) {
+        _fv.copy(fitCorners[i]).project(camera);
+        if (Math.abs(_fv.x) > fx || Math.abs(_fv.y) > fy) return false;
+      }
+      return true;
+    };
+    let lo = fitMaxZ + 0.6, hi = 400;
+    for (let i = 0; i < 30; i++) { const mid = (lo + hi) / 2; if (fits(mid)) hi = mid; else lo = mid; }
+    camera.position.set(0, 0, hi);
     camera.lookAt(0, 0, 0);
+    camera.updateMatrixWorld(true);
     camera.updateProjectionMatrix();
-  }
-  function modelBox() {
-    if (!modelReady && !model.children.length) return null;
-    return new THREE.Box3().setFromObject(model);
   }
 
   function resize() {
